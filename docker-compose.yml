@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./apps/backend
+    container_name: nexuserp-backend
+    env_file:
+      - ./apps/backend/.env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./apps/frontend
+    container_name: nexuserp-frontend
+    env_file:
+      - ./apps/frontend/.env
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy

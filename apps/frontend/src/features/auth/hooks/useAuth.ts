@@ -1,0 +1,123 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import apiClient from "../../../shared/api/client";
+import { useAuthStore } from "../../../shared/stores/auth.store";
+import { loginSchema, tokenResponseSchema, userSchema } from "../types/auth.types";
+import type { LoginType, RegisterType, UserType } from "../types/auth.types";
+
+type UseAuthResult = {
+  user: UserType | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  errorMessage: string | null;
+  login: (data: LoginType) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (data: RegisterType) => Promise<void>;
+};
+
+export function useAuth(): UseAuthResult {
+  const { user, accessToken, setTokenAndUser, setAccessToken, setUser, clearAuth } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const bootstrapSession = useCallback(async () => {
+    try {
+      const refreshResponse = await apiClient.post("/auth/refresh");
+      const parsedToken = tokenResponseSchema.safeParse(refreshResponse.data);
+      if (!parsedToken.success) {
+        clearAuth();
+        return;
+      }
+
+      setAccessToken(parsedToken.data.access_token);
+      const meResponse = await apiClient.get("/auth/me");
+      const parsedUser = userSchema.safeParse(meResponse.data);
+      if (!parsedUser.success) {
+        clearAuth();
+        return;
+      }
+
+      setUser(parsedUser.data);
+    } catch {
+      clearAuth();
+    }
+  }, [clearAuth, setAccessToken, setUser]);
+
+  useEffect(() => {
+    if (!accessToken && !user) {
+      void bootstrapSession();
+    }
+  }, [accessToken, bootstrapSession, user]);
+
+  const login = useCallback(
+    async (data: LoginType) => {
+      setErrorMessage(null);
+      setIsLoading(true);
+
+      try {
+        const parsedPayload = loginSchema.parse(data);
+        const tokenResponse = await apiClient.post("/auth/login", parsedPayload);
+        const parsedToken = tokenResponseSchema.parse(tokenResponse.data);
+        const meResponse = await apiClient.get("/auth/me", {
+          headers: {
+            Authorization: `Bearer ${parsedToken.access_token}`,
+          },
+        });
+        const parsedUser = userSchema.parse(meResponse.data);
+        setTokenAndUser(parsedToken.access_token, parsedUser);
+      } catch (error) {
+        setErrorMessage("Credenciales inválidas");
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setTokenAndUser]
+  );
+
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      await apiClient.post("/auth/logout");
+      clearAuth();
+      window.location.href = "/login";
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearAuth]);
+
+  const register = useCallback(async (data: RegisterType) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const payload = {
+        email: data.email,
+        password: data.password,
+        full_name: data.full_name,
+      };
+      await apiClient.post("/auth/register", payload);
+      window.location.href = "/login";
+    } catch (error) {
+      setErrorMessage("No se pudo crear la cuenta");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(accessToken),
+      isLoading,
+      errorMessage,
+      login,
+      logout,
+      register,
+    }),
+    [user, accessToken, isLoading, errorMessage, login, logout, register]
+  );
+}

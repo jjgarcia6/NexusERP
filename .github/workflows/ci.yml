@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/backend/**"
+      - "apps/frontend/**"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend dependencies
+        working-directory: apps/backend
+        run: pip install .[dev]
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+      - name: Ruff
+        working-directory: apps/backend
+        run: ruff check .
+      - name: Mypy
+        working-directory: apps/backend
+        run: mypy .
+      - name: ESLint
+        working-directory: apps/frontend
+        run: npm run lint
+
+  scan:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend dependencies
+        working-directory: apps/backend
+        run: pip install .[dev]
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+      - name: Bandit
+        working-directory: apps/backend
+        run: bandit -r . -ll
+      - name: detect-secrets
+        working-directory: .
+        run: detect-secrets scan > .secrets.baseline
+      - name: npm audit
+        working-directory: apps/frontend
+        run: npm audit --audit-level=high
+
+  test:
+    runs-on: ubuntu-latest
+    needs: scan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend dependencies
+        working-directory: apps/backend
+        run: pip install .[dev]
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+      - name: Backend tests
+        working-directory: apps/backend
+        run: pytest
+      - name: Frontend tests
+        working-directory: apps/frontend
+        run: npm run test
