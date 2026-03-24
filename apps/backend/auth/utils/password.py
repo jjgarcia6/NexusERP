@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from typing import cast
-
-from passlib.context import CryptContext  # type: ignore[import-untyped]
-
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__rounds=12,
-)
+import bcrypt
 
 
 def hash_password(plain: str) -> str:
-    return cast(str, pwd_context.hash(plain))
+    hashed = bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=12))
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return cast(bool, pwd_context.verify(plain, hashed))
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except ValueError:
+        return False

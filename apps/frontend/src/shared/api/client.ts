@@ -28,11 +28,17 @@ apiClient.interceptors.response.use(
       headers: Record<string, string>;
       [key: string]: unknown;
     };
+    const requestUrl = String(originalRequest.url);
+    const isAuthRequestWithoutRefresh =
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/auth/register") ||
+      requestUrl.includes("/auth/logout");
 
     if (
       error.response?.status !== 401 ||
       originalRequest._retry ||
-      String(originalRequest.url).includes("/auth/refresh")
+      requestUrl.includes("/auth/refresh") ||
+      isAuthRequestWithoutRefresh
     ) {
       return Promise.reject(error);
     }

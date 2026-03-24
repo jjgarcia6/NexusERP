@@ -10,6 +10,12 @@ const LoginPage = lazy(() =>
   }))
 );
 
+const RegisterPage = lazy(() =>
+  import("../pages/RegisterPage").then((module) => ({
+    default: module.RegisterPage,
+  }))
+);
+
 const DashboardPage = lazy(() =>
   import("../pages/DashboardPage").then((module) => ({
     default: module.DashboardPage,
@@ -26,6 +32,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<div className="p-6">Cargando...</div>}>
             <LoginPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "register",
+        element: (
+          <Suspense fallback={<div className="p-6">Cargando...</div>}>
+            <RegisterPage />
           </Suspense>
         ),
       },

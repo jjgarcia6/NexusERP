@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
+from typing import Any
 
+import jwt
 from fastapi import HTTPException, status
-from jose import JWTError, jwt  # type: ignore[import-untyped]
+from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 
 from core.settings import get_settings
 
@@ -13,8 +14,7 @@ def _encode_token(data: dict[str, Any], expires_delta: timedelta) -> str:
     settings = get_settings()
     payload = data.copy()
     payload["exp"] = datetime.now(UTC) + expires_delta
-    encoded = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-    return cast(str, encoded)
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def create_access_token(data: dict[str, Any]) -> str:
@@ -41,7 +41,7 @@ def decode_token(token: str) -> dict[str, Any]:
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
         )
-    except JWTError as exc:
+    except (ExpiredSignatureError, DecodeError, InvalidTokenError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido o expirado",
@@ -53,4 +53,4 @@ def decode_token(token: str) -> dict[str, Any]:
             detail="Token inválido o expirado",
         )
 
-    return cast(dict[str, Any], decoded)
+    return decoded

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import apiClient from "../../../shared/api/client";
 import { useAuthStore } from "../../../shared/stores/auth.store";
@@ -16,9 +17,19 @@ type UseAuthResult = {
 };
 
 export function useAuth(): UseAuthResult {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, accessToken, setTokenAndUser, setAccessToken, setUser, clearAuth } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isPublicAuthRoute = location.pathname === "/login" || location.pathname === "/register";
+  const redirectAfterLogin = (() => {
+    const redirectParam = new URLSearchParams(location.search).get("redirect");
+    if (redirectParam && redirectParam.startsWith("/")) {
+      return redirectParam;
+    }
+    return "/dashboard";
+  })();
 
   const bootstrapSession = useCallback(async () => {
     try {
@@ -44,10 +55,10 @@ export function useAuth(): UseAuthResult {
   }, [clearAuth, setAccessToken, setUser]);
 
   useEffect(() => {
-    if (!accessToken && !user) {
+    if (!accessToken && !user && !isPublicAuthRoute) {
       void bootstrapSession();
     }
-  }, [accessToken, bootstrapSession, user]);
+  }, [accessToken, bootstrapSession, isPublicAuthRoute, user]);
 
   const login = useCallback(
     async (data: LoginType) => {
@@ -65,6 +76,7 @@ export function useAuth(): UseAuthResult {
         });
         const parsedUser = userSchema.parse(meResponse.data);
         setTokenAndUser(parsedToken.access_token, parsedUser);
+        navigate(redirectAfterLogin, { replace: true });
       } catch (error) {
         setErrorMessage("Credenciales inválidas");
         throw error;
@@ -72,7 +84,7 @@ export function useAuth(): UseAuthResult {
         setIsLoading(false);
       }
     },
-    [setTokenAndUser]
+    [navigate, redirectAfterLogin, setTokenAndUser]
   );
 
   const logout = useCallback(async () => {
@@ -82,11 +94,11 @@ export function useAuth(): UseAuthResult {
     try {
       await apiClient.post("/auth/logout");
       clearAuth();
-      window.location.href = "/login";
+      navigate("/login", { replace: true });
     } finally {
       setIsLoading(false);
     }
-  }, [clearAuth]);
+  }, [clearAuth, navigate]);
 
   const register = useCallback(async (data: RegisterType) => {
     setIsLoading(true);
@@ -99,14 +111,14 @@ export function useAuth(): UseAuthResult {
         full_name: data.full_name,
       };
       await apiClient.post("/auth/register", payload);
-      window.location.href = "/login";
+      navigate("/login", { replace: true });
     } catch (error) {
       setErrorMessage("No se pudo crear la cuenta");
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   return useMemo(
     () => ({

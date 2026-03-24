@@ -26,7 +26,9 @@ export const userSchema = z.object({
   full_name: z.string(),
   role: roleSchema,
   is_active: z.boolean(),
-  created_at: z.string().datetime(),
+  created_at: z.string().refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: "Fecha inválida",
+  }),
 });
 export type UserType = z.infer<typeof userSchema>;
 

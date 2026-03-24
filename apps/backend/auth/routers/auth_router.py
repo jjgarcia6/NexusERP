@@ -35,7 +35,6 @@ def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
 async def register(
     payload: RegisterRequest,
     service: Annotated[AuthService, Depends(get_auth_service)],
-    _: Annotated[UserResponse, Depends(require_role(RoleEnum.admin))],
 ) -> UserResponse:
     return await service.register_user(payload)
 
