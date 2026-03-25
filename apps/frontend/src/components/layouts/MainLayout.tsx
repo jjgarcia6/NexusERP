@@ -24,6 +24,7 @@ export function MainLayout() {
     const baseItems: NavItem[] = [
       { label: "Dashboard", to: "/dashboard" },
       { label: "Productos", to: "/products" },
+      { label: "Inventario", to: "/inventory" },
     ];
     if (user?.role === "admin" || user?.role === "bodeguero") {
       baseItems.push({ label: "Compras", to: "/purchases" });

@@ -89,6 +89,11 @@ class ProductBase(BaseModel):
         max_length=500,
         description="URL externa de imagen del producto.",
     )
+    min_stock: int = Field(
+        default=0,
+        ge=0,
+        description="Umbral minimo de stock para alertas de inventario.",
+    )
 
 
 class ProductRequest(ProductBase):
@@ -164,6 +169,11 @@ class ProductUpdateRequest(BaseModel):
     is_active: bool | None = Field(
         default=None,
         description="Nuevo estado. False indica soft delete.",
+    )
+    min_stock: int | None = Field(
+        default=None,
+        ge=0,
+        description="Nuevo umbral minimo de stock para alertas.",
     )
 
 

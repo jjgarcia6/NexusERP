@@ -123,12 +123,16 @@ class ProductRepository:
             return None
         update_payload = payload.copy()
         update_payload["updated_at"] = datetime.now(UTC)
-        await self.collection.find_one_and_update(
+        updated = await self.collection.find_one_and_update(
             {"_id": ObjectId(product_id), "is_active": True},
             {"$set": update_payload},
             return_document=ReturnDocument.AFTER,
         )
-        return await self.find_by_id(product_id, is_active=False)
+        if updated is None:
+            return None
+
+        # Keep lookup-based shape and fetch according to the post-update active state.
+        return await self.find_by_id(product_id, is_active=bool(updated.get("is_active", True)))
 
     async def find_by_sku(self, sku: str) -> dict[str, Any] | None:
         return await self.collection.find_one({"sku": sku})

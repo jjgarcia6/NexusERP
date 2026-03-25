@@ -68,6 +68,7 @@ export const productSchema = z.preprocess(
     category_id: z.string(),
     category_name: z.string(),
     image_url: z.string().url().max(500).nullable().optional(),
+    min_stock: z.number().int().nonnegative().default(0),
     is_active: z.boolean(),
     created_at: dateTimeLikeSchema,
     updated_at: dateTimeLikeSchema,
@@ -85,6 +86,7 @@ export const productRequestSchema = z.object({
   cost: z.number().positive().optional(),
   category_id: z.string().min(1, "Seleccione una categoria"),
   image_url: z.string().url("URL invalida").max(500).optional(),
+  min_stock: z.number().int().nonnegative().default(0),
 });
 export type ProductRequestType = z.infer<typeof productRequestSchema>;
 

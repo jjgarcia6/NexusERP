@@ -46,6 +46,12 @@ const PurchasesPage = lazy(() =>
   }))
 );
 
+const InventoryPage = lazy(() =>
+  import("../pages/InventoryPage").then((module) => ({
+    default: module.InventoryPage,
+  }))
+);
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -123,6 +129,14 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<div className="p-6">Cargando...</div>}>
                 <PurchasesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "inventory",
+            element: (
+              <Suspense fallback={<div className="p-6">Cargando...</div>}>
+                <InventoryPage />
               </Suspense>
             ),
           },

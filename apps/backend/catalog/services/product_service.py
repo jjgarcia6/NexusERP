@@ -11,6 +11,7 @@ from pymongo.errors import DuplicateKeyError
 from catalog.repositories.category_repository import CategoryRepository
 from catalog.repositories.product_repository import ProductRepository
 from catalog.schemas import ProductRequest, ProductUpdateRequest
+from inventory.repositories.stock_level_repository import StockLevelRepository
 
 
 def _to_decimal(value: Any) -> Decimal | None:
@@ -56,9 +57,11 @@ class ProductService:
         self,
         product_repository: ProductRepository,
         category_repository: CategoryRepository,
+        stock_level_repository: StockLevelRepository,
     ) -> None:
         self.product_repository = product_repository
         self.category_repository = category_repository
+        self.stock_level_repository = stock_level_repository
 
     async def create_product(self, payload: ProductRequest, *, created_by: str) -> dict[str, Any]:
         category = await self.category_repository.find_by_id(payload.category_id)
@@ -171,6 +174,13 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Producto no encontrado",
             )
+
+        if "min_stock" in updates:
+            await self.stock_level_repository.update_min_stock(
+                product_id,
+                int(updates["min_stock"]),
+            )
+
         return _to_product_dict(updated)
 
     async def deactivate_product(
