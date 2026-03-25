@@ -9,6 +9,7 @@ import type { LoginType, RegisterType, UserType } from "../types/auth.types";
 type UseAuthResult = {
   user: UserType | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   errorMessage: string | null;
   login: (data: LoginType) => Promise<void>;
@@ -101,6 +102,11 @@ export function useAuth(): UseAuthResult {
   }, [clearAuth, navigate]);
 
   const register = useCallback(async (data: RegisterType) => {
+    if (!accessToken || !user || user.role !== "admin") {
+      setErrorMessage("Solo un administrador autenticado puede crear usuarios.");
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage(null);
 
@@ -112,18 +118,18 @@ export function useAuth(): UseAuthResult {
       };
       await apiClient.post("/auth/register", payload);
       navigate("/login", { replace: true });
-    } catch (error) {
+    } catch {
       setErrorMessage("No se pudo crear la cuenta");
-      throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }, [accessToken, navigate, user]);
 
   return useMemo(
     () => ({
       user,
       isAuthenticated: Boolean(accessToken),
+      isAdmin: user?.role === "admin",
       isLoading,
       errorMessage,
       login,

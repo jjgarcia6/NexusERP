@@ -98,6 +98,10 @@ class FakeAuthService(AuthService):
 
 @pytest.fixture()
 def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeAuthService:
+    monkeypatch.setenv("MONGODB_URL", "mongodb://localhost:27017")
+    monkeypatch.setenv("MONGODB_DB_NAME", "nexuserp_test")
+    monkeypatch.setenv("APP_ENV", "development")
+    monkeypatch.setenv("APP_CORS_ORIGINS", "http://localhost:5173")
     monkeypatch.setenv("JWT_SECRET_KEY", "test-secret")
     monkeypatch.setenv("JWT_ALGORITHM", "HS256")
     monkeypatch.setenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15")

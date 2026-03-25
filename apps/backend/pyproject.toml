@@ -50,7 +50,7 @@ exclude_dirs = ["tests", "build"]
 severity = "medium"
 
 [tool.setuptools.packages.find]
-include = ["core*", "routers*", "auth*"]
+include = ["core*", "routers*", "auth*", "catalog*", "purchases*"]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

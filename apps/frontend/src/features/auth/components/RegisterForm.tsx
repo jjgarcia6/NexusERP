@@ -1,7 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
+import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { Label } from "../../../components/ui/label";
 import { useAuth } from "../hooks/useAuth";
 import { registerSchema } from "../types/auth.types";
 import type { RegisterType } from "../types/auth.types";
@@ -31,37 +33,36 @@ export function RegisterForm() {
       noValidate
       onSubmit={handleSubmit(onSubmit)}
     >
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <Label className="flex flex-col gap-1">
         Nombre completo
         <Input type="text" placeholder="María Pérez" {...register("full_name")} />
         {errors.full_name ? (
           <span className="text-sm text-red-600 dark:text-red-400">{errors.full_name.message}</span>
         ) : null}
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <Label className="flex flex-col gap-1">
         Correo electrónico
         <Input type="email" placeholder="usuario@empresa.com" {...register("email")} />
         {errors.email ? <span className="text-sm text-red-600 dark:text-red-400">{errors.email.message}</span> : null}
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <Label className="flex flex-col gap-1">
         Contraseña
         <Input type="password" placeholder="••••••••" {...register("password")} />
         {errors.password ? (
           <span className="text-sm text-red-600 dark:text-red-400">{errors.password.message}</span>
         ) : null}
-      </label>
+      </Label>
 
       {errorMessage ? <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p> : null}
 
-      <button
+      <Button
         type="submit"
         disabled={isLoading}
-        className="rounded-md bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
       >
         {isLoading ? "Creando cuenta..." : "Crear cuenta"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 
+import { Button } from "../components/ui/button";
 import { useAuth } from "../features/auth";
 
 export function DashboardPage() {
@@ -19,16 +20,16 @@ export function DashboardPage() {
         <p className="text-base text-slate-700 dark:text-slate-300">
           Rol: <span className="font-semibold">{user?.role ?? "sin rol"}</span>
         </p>
-        <button
+        <Button
           type="button"
           onClick={() => {
             void logout();
           }}
           disabled={isLoading}
-          className="w-fit rounded-md bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+          className="w-fit"
         >
           Cerrar sesión
-        </button>
+        </Button>
       </section>
     </main>
   );
