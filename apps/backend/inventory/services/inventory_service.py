@@ -215,10 +215,152 @@ class InventoryService(InventoryServiceProtocol):
         sale_id: str,
         lines: list[Any],
     ) -> None:
-        logger.info(
-            "register_sale_exits llamado sin implementación en inventory-management",
-            extra={"sale_id": sale_id, "lines_count": len(lines)},
-        )
+        # 1. Verificar stock suficiente para todas las líneas
+        insufficient = []
+        for line in lines:
+            product_id = line["product_id"]
+            quantity = int(line["quantity"])
+            level = await self.stock_level_repository.find_by_product_id(product_id)
+            available = int(level.get("available_quantity", 0)) if level else 0
+            if available < quantity:
+                insufficient.append(
+                    {"product_id": product_id, "available": available, "requested": quantity}
+                )
+        if insufficient:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "error": "Stock insuficiente en uno o más productos",
+                    "products": insufficient,
+                },
+            )
+
+        # 2. Decrementar stock y registrar movimientos
+        decremented = []
+        try:
+            for line in lines:
+                product_id = line["product_id"]
+                quantity = int(line["quantity"])
+                level = await self.stock_level_repository.find_by_product_id(product_id)
+                min_stock = int(level.get("min_stock", 0)) if level else 0
+                # Decrementar stock
+                updated_level = await self.stock_level_repository.increment_quantity(
+                    product_id,
+                    -quantity,
+                    min_stock,
+                )
+                if updated_level is None:
+                    raise Exception(f"No se pudo decrementar stock para {product_id}")
+                decremented.append((product_id, quantity, min_stock))
+                quantity_before = int(updated_level.get("available_quantity", 0)) + quantity
+                quantity_after = int(
+                    updated_level.get("available_quantity", quantity_before - quantity)
+                )
+                # Registrar movimiento
+                await self.stock_movement_repository.create_movement(
+                    {
+                        "product_id": product_id,
+                        "product_name": line.get("product_name", ""),
+                        "type": MovementTypeEnum.sale_exit.value,
+                        "quantity": quantity,
+                        "quantity_before": quantity_before,
+                        "quantity_after": quantity_after,
+                        "reason": "Venta confirmada",
+                        "reference_id": sale_id,
+                        "reference_type": "sale",
+                        "created_by": line.get("created_by"),
+                    }
+                )
+        except Exception as e:
+            # Compensación: revertir decrementos en orden inverso
+            for product_id, quantity, min_stock in reversed(decremented):
+                await self.stock_level_repository.increment_quantity(
+                    product_id,
+                    quantity,
+                    min_stock,
+                )
+                # Registrar movimiento de compensación (opcional)
+                await self.stock_movement_repository.create_movement(
+                    {
+                        "product_id": product_id,
+                        "product_name": "",
+                        "type": MovementTypeEnum.manual_entry.value,
+                        "quantity": quantity,
+                        "quantity_before": 0,
+                        "quantity_after": 0,
+                        "reason": "Compensación por error en venta",
+                        "reference_id": sale_id,
+                        "reference_type": "sale_compensate",
+                        "created_by": None,
+                    }
+                )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Error al decrementar stock: {str(e)}",
+            ) from e
+
+    async def revert_sale_exits(
+        self,
+        sale_id: str,
+        lines: list[Any],
+        reason: str,
+        reference_type: str,
+    ) -> None:
+        restored: list[tuple[str, int, int]] = []
+        try:
+            for line in lines:
+                product_id = str(line["product_id"])
+                quantity = int(line["quantity"])
+                level = await self.stock_level_repository.find_by_product_id(product_id)
+                if level is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Nivel de stock no encontrado para {product_id}",
+                    )
+
+                min_stock = int(level.get("min_stock", 0))
+                quantity_before = int(level.get("available_quantity", 0))
+                updated_level = await self.stock_level_repository.increment_quantity(
+                    product_id,
+                    quantity,
+                    min_stock,
+                )
+                if updated_level is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"No se pudo revertir stock para {product_id}",
+                    )
+
+                quantity_after = int(
+                    updated_level.get("available_quantity", quantity_before + quantity)
+                )
+                restored.append((product_id, quantity, min_stock))
+
+                await self.stock_movement_repository.create_movement(
+                    {
+                        "product_id": product_id,
+                        "product_name": line.get("product_name", ""),
+                        "type": MovementTypeEnum.manual_entry.value,
+                        "quantity": quantity,
+                        "quantity_before": quantity_before,
+                        "quantity_after": quantity_after,
+                        "reason": reason,
+                        "reference_id": sale_id,
+                        "reference_type": reference_type,
+                        "created_by": line.get("created_by"),
+                    }
+                )
+        except Exception as exc:
+            for product_id, quantity, min_stock in reversed(restored):
+                await self.stock_level_repository.increment_quantity(
+                    product_id,
+                    -quantity,
+                    min_stock,
+                )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="No se pudo revertir stock de la venta",
+            ) from exc
 
     async def check_stock_availability(
         self,

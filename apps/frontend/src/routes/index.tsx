@@ -52,6 +52,24 @@ const InventoryPage = lazy(() =>
   }))
 );
 
+const CustomersPage = lazy(() =>
+  import("../pages/CustomersPage").then((module) => ({
+    default: module.CustomersPage,
+  }))
+);
+
+const POSPage = lazy(() =>
+  import("../pages/POSPage").then((module) => ({
+    default: module.POSPage,
+  }))
+);
+
+const SalesPage = lazy(() =>
+  import("../pages/SalesPage").then((module) => ({
+    default: module.SalesPage,
+  }))
+);
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -139,6 +157,48 @@ export const router = createBrowserRouter([
                 <InventoryPage />
               </Suspense>
             ),
+          },
+          {
+            path: "customers",
+            element: (
+              <Suspense fallback={<div className="p-6">Cargando...</div>}>
+                <CustomersPage />
+              </Suspense>
+            ),
+          },
+          {
+            element: <ProtectedRoute allowedRoles={["admin", "vendedor"]} />,
+            children: [
+              {
+                path: "pos",
+                element: (
+                  <Suspense fallback={<div className="p-6">Cargando...</div>}>
+                    <POSPage />
+                  </Suspense>
+                ),
+              },
+            ],
+          },
+          {
+            element: <ProtectedRoute allowedRoles={["admin", "vendedor", "bodeguero"]} />,
+            children: [
+              {
+                path: "sales",
+                element: (
+                  <Suspense fallback={<div className="p-6">Cargando...</div>}>
+                    <SalesPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "sales/:id",
+                element: (
+                  <Suspense fallback={<div className="p-6">Cargando...</div>}>
+                    <SalesPage />
+                  </Suspense>
+                ),
+              },
+            ],
           },
         ],
       },

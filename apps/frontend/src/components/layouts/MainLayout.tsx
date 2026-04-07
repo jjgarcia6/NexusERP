@@ -26,6 +26,13 @@ export function MainLayout() {
       { label: "Productos", to: "/products" },
       { label: "Inventario", to: "/inventory" },
     ];
+    if (user?.role === "admin" || user?.role === "vendedor") {
+      baseItems.push({ label: "Clientes", to: "/customers" });
+      baseItems.push({ label: "POS", to: "/pos" });
+    }
+    if (user?.role === "admin" || user?.role === "vendedor" || user?.role === "bodeguero") {
+      baseItems.push({ label: "Ventas", to: "/sales" });
+    }
     if (user?.role === "admin" || user?.role === "bodeguero") {
       baseItems.push({ label: "Compras", to: "/purchases" });
     }

@@ -28,6 +28,11 @@ class Settings(BaseSettings):
         description="Define si la cookie refresh usa la bandera Secure.",
     )
 
+    pos_point_of_sale: str = Field(
+        default="001-001",
+        description="Identificador del punto de venta. Formato: establecimiento-punto_emisión."
+    )
+
     model_config = SettingsConfigDict(env_file=".env", strict=True, extra="ignore")
 
 

@@ -18,6 +18,14 @@ class InventoryServiceProtocol(Protocol):
         lines: list[Any],
     ) -> None: ...
 
+    async def revert_sale_exits(
+        self,
+        sale_id: str,
+        lines: list[Any],
+        reason: str,
+        reference_type: str,
+    ) -> None: ...
+
     async def check_stock_availability(
         self,
         product_id: str,

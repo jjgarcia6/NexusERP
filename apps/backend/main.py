@@ -16,6 +16,8 @@ from catalog.routers.products_router import router as products_router
 from core.database import connect_to_mongodb, disconnect_from_mongodb, get_database
 from core.exceptions import register_exception_handlers
 from core.settings import get_settings
+from customers.repositories.customer_repository import ensure_customer_indexes
+from customers.routers.customers_router import router as customers_router
 from inventory.repositories.stock_level_repository import ensure_stock_level_indexes
 from inventory.repositories.stock_movement_repository import ensure_stock_movement_indexes
 from inventory.routers.inventory_router import router as inventory_router
@@ -23,6 +25,9 @@ from purchases.repositories.purchase_order_repository import ensure_purchase_ord
 from purchases.repositories.supplier_repository import ensure_supplier_indexes
 from purchases.routers.purchases_router import router as purchases_router
 from purchases.routers.suppliers_router import router as suppliers_router
+from sales.repositories.invoice_sequence_repository import ensure_invoice_sequence_initialized
+from sales.repositories.sale_repository import ensure_sale_indexes
+from sales.routers.sales_router import router as sales_router
 from routers.health_router import router as health_router
 
 settings = get_settings()
@@ -39,8 +44,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     await ensure_product_indexes(database)
     await ensure_supplier_indexes(database)
     await ensure_purchase_order_indexes(database)
+    await ensure_customer_indexes(database)
     await ensure_stock_level_indexes(database)
     await ensure_stock_movement_indexes(database)
+    await ensure_sale_indexes(database)
+    await ensure_invoice_sequence_initialized(database, settings.pos_point_of_sale)
     try:
         yield
     finally:
@@ -62,6 +70,8 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(categories_router, prefix="/categories", tags=["catalog"])
 app.include_router(products_router, prefix="/products", tags=["catalog"])
+app.include_router(sales_router, prefix="/sales", tags=["sales"])
 app.include_router(suppliers_router, prefix="/suppliers", tags=["purchases"])
 app.include_router(purchases_router, prefix="/purchases", tags=["purchases"])
+app.include_router(customers_router, prefix="/customers", tags=["customers"])
 app.include_router(inventory_router, prefix="/inventory", tags=["inventory"])
