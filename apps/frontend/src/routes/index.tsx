@@ -70,6 +70,12 @@ const SalesPage = lazy(() =>
   }))
 );
 
+const ReportsPage = lazy(() =>
+  import("../pages/ReportsPage").then((module) => ({
+    default: module.ReportsPage,
+  }))
+);
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -174,6 +180,14 @@ export const router = createBrowserRouter([
                 element: (
                   <Suspense fallback={<div className="p-6">Cargando...</div>}>
                     <POSPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "reports",
+                element: (
+                  <Suspense fallback={<div className="p-6">Cargando...</div>}>
+                    <ReportsPage />
                   </Suspense>
                 ),
               },

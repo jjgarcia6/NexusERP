@@ -29,6 +29,7 @@ export function MainLayout() {
     if (user?.role === "admin" || user?.role === "vendedor") {
       baseItems.push({ label: "Clientes", to: "/customers" });
       baseItems.push({ label: "POS", to: "/pos" });
+      baseItems.push({ label: "Reportes", to: "/reports" });
     }
     if (user?.role === "admin" || user?.role === "vendedor" || user?.role === "bodeguero") {
       baseItems.push({ label: "Ventas", to: "/sales" });

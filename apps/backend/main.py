@@ -25,6 +25,7 @@ from purchases.repositories.purchase_order_repository import ensure_purchase_ord
 from purchases.repositories.supplier_repository import ensure_supplier_indexes
 from purchases.routers.purchases_router import router as purchases_router
 from purchases.routers.suppliers_router import router as suppliers_router
+from reports.routers.reports_router import router as reports_router
 from sales.repositories.invoice_sequence_repository import ensure_invoice_sequence_initialized
 from sales.repositories.sale_repository import ensure_sale_indexes
 from sales.routers.sales_router import router as sales_router
@@ -75,3 +76,4 @@ app.include_router(suppliers_router, prefix="/suppliers", tags=["purchases"])
 app.include_router(purchases_router, prefix="/purchases", tags=["purchases"])
 app.include_router(customers_router, prefix="/customers", tags=["customers"])
 app.include_router(inventory_router, prefix="/inventory", tags=["inventory"])
+app.include_router(reports_router, prefix="/reports", tags=["reports"])

@@ -135,6 +135,7 @@ Thumbs.db
 Desktop.ini
 /documents/
 /openspec/
+.github/
 
 # =========================
 # Infra y despliegue local
